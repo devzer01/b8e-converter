@@ -6,7 +6,7 @@
 #include <fcntl.h>
 #include <string.h>
 
-#define MAX_WORD_SIZE 32
+#define MAX_WORD_SIZE 128
 
 int resetptr(unsigned char * ptr) {
     unsigned char *nullb = "\000\000\000\000\000\000\000\000\000"
@@ -17,7 +17,7 @@ int resetptr(unsigned char * ptr) {
                            "\000\000\000\000\000\000\000\000\000"
                            "\000\000\000\000\000\000\000\000\000"
                            "\000\000\000\000\000\000\000\000\000";
-    memcmp(ptr, nullb, MAX_WORD_SIZE);
+    memcpy(ptr, nullb, MAX_WORD_SIZE);
 }
 
 int main( int argc, char **argv)
@@ -25,8 +25,8 @@ int main( int argc, char **argv)
    unsigned char *file1 = argv[1];
    unsigned char *file2 = argv[2];
 
-   unsigned char **words;
-   unsigned char **words2;
+   unsigned char words[2096][MAX_WORD_SIZE];
+   unsigned char words2[2096][MAX_WORD_SIZE];
    unsigned int index;
    int fp1 = open(file1, O_RDONLY);
    unsigned char cursor = 0x00;
@@ -38,11 +38,7 @@ int main( int argc, char **argv)
    while(0 != read(fp1, &cursor, 1)) {
      switch (cursor) {
         case 0xa:
-           *(words+row) = malloc(sizeof(unsigned char) * s);
-             if (*(words+row) == 0x00) {
-                 dprintf(2, "memory error\n");
-             }
-           memcpy(*(words+row), current, s);
+           memcpy(&words[row], &current, s);
            resetptr(current);
              row++;
            s = 0;
@@ -72,8 +68,7 @@ int main( int argc, char **argv)
    while(0 != read(fp2, &cursor, 1)) {
         switch (cursor) {
            case 0xa:
-               *(words2+row) = malloc(sizeof(unsigned char) * s);
-                memcpy(*(words2+row), current, s);
+               memcpy(&words2[row], &current, s);
                 resetptr(current);
                 row++;
                 s = 0;
@@ -93,7 +88,7 @@ int main( int argc, char **argv)
    int match = 0;
    for (int x = 0; x < word_length; x++) {
         for (int y = 0; y < word2_length; y++) {
-            if (memcmp(words[x], words2[y], MAX_WORD_SIZE) == 0) {
+            if (memcmp(words[x], words2[y], 1) == 0) {
                 match++;
             }
         }
